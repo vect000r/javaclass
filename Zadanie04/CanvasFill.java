@@ -3,47 +3,45 @@ import java.util.*;
 public class CanvasFill extends Fill {
     @Override
     public void fill(Canvas canvas, List<Position2D> neighbours, Position2D start, int brightness) {
-        // Sprawdzenie parametrów wejściowych
+        // Walidacja parametrów wejściowych
         if (canvas == null || neighbours == null || start == null) {
-            throw new IllegalArgumentException("Parametry nie mogą być null");
+            throw new IllegalArgumentException("Parameters cannot be null.");
+        }
+        if (neighbours.isEmpty()) {
+            throw new IllegalArgumentException("The neighbors list cannot be empty.");
         }
 
-        // Jeśli punkt startowy jest poza płótnem, kończymy
+        // Sprawdzanie czy punkt startowy znajduje się na płótnie
         if (isOutOfBounds(canvas, start)) {
-            return;
+            throw new IllegalArgumentException("The starting point is out of bounds.");
         }
 
-        // Pobieramy oryginalną jasność punktu startowego
-        int originalBrightness = canvas.getBrightness(start);
-
-        // Jeśli jasność docelowa jest taka sama jak oryginalna, kończymy
-        if (originalBrightness == brightness) {
-            return;
-        }
-
+        // Kolejka do przetwarzania pikseli
         Queue<Position2D> queue = new LinkedList<>();
+        Set<Position2D> visited = new HashSet<>(); // Śledzenie odwiedzonych pikseli
         queue.add(start);
 
+        // Algorytm BFS
         while (!queue.isEmpty()) {
             Position2D current = queue.poll();
 
-            // Sprawdzamy czy piksel ma oryginalną jasność
-            if (canvas.getBrightness(current) != originalBrightness) {
-                continue;
+            // Ustawiamy nową jasność piksela
+            if (canvas.getBrightness(current) < brightness) {
+                canvas.setBrightness(current, brightness);
             }
 
-            // Ustawiamy nową jasność
-            canvas.setBrightness(current, brightness);
-
-            // Sprawdzamy wszystkich sąsiadów
+            // Przetwarzamy sąsiadów
             for (Position2D neighbour : neighbours) {
                 int newRow = current.getRow() + neighbour.getRow();
                 int newCol = current.getCol() + neighbour.getCol();
                 Position2D newPosition = new Position2D(newCol, newRow);
 
+                // Sprawdzamy warunki dla nowej pozycji
                 if (!isOutOfBounds(canvas, newPosition) &&
-                        canvas.getBrightness(newPosition) == originalBrightness) {
+                        canvas.getBrightness(newPosition) < brightness && // Warunek jasności
+                        !visited.contains(newPosition)) {
                     queue.add(newPosition);
+                    visited.add(newPosition); // Dodajemy do odwiedzonych
                 }
             }
         }
